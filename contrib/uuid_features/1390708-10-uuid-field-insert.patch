@@ -1,0 +1,51 @@
+diff --git a/uuid.entity.inc b/uuid.entity.inc
+index 50081c3..0144abe 100644
+--- a/uuid.entity.inc
++++ b/uuid.entity.inc
+@@ -509,31 +509,35 @@ function entity_property_uuid_to_id(&$objects, $entity_type, $properties) {
+   }
+   $uuids = array();
+   $values = array();
+-  $i = 0;
+-  foreach ($things as &$object) {
++  foreach ($things as $k => &$object) {
+     foreach ($properties as $property) {
+       // This is probably an entity object.
+       if (is_object($object) && isset($object->{$property})) {
+-        $values[$i] = &$object->{$property};
++        $values[$k] = &$object->{$property};
+       }
+       // This is probably a field items array.
+       elseif (is_array($object) && isset($object[$property])) {
+-        $values[$i] = &$object[$property];
++        $values[$k] = &$object[$property];
+       }
+       else {
+-        $i++;
+         continue;
+       }
+-      if (uuid_is_valid($values[$i])) {
+-        $uuids[] = $values[$i];
++      if (uuid_is_valid($values[$k])) {
++        $uuids[] = $values[$k];
+       }
+-      $i++;
+     }
+   }
+   $ids = entity_get_id_by_uuid($entity_type, $uuids);
+-  foreach ($values as $i => $value) {
+-    if (isset($ids[$value])) {
+-      $values[$i] = $ids[$value];
++  foreach ($values as $k => $uuid) {
++    if (isset($ids[$uuid])) {
++      $values[$k] = $ids[$uuid];
++    }
++    // The UUID lookup failed, remove the item.
++    elseif (is_array($objects)) {
++      unset($objects[$k]);
++    }
++    else {
++      $objects = NULL;
+     }
+   }
+ }
