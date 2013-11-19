@@ -1,34 +1,35 @@
-diff --git a/modules/uuid_panelizer/uuid_panelizer.info b/modules/uuid_panelizer/uuid_panelizer.info
-new file mode 100644
-index 0000000..f1a73a3
---- /dev/null
-+++ b/modules/uuid_panelizer/uuid_panelizer.info
-@@ -0,0 +1,4 @@
-+name = UUID Panelizer
-+description = Helps panelized content save correctly
-+core = 7.x
-+package = Features
-\ No newline at end of file
-diff --git a/modules/uuid_panelizer/uuid_panelizer.module b/modules/uuid_panelizer/uuid_panelizer.module
-new file mode 100644
-index 0000000..c43cbb1
---- /dev/null
-+++ b/modules/uuid_panelizer/uuid_panelizer.module
-@@ -0,0 +1,46 @@
-+<?php
-+/**
-+ * @file
-+ * Module File
-+ */
-+ 
+diff --git a/uuid_features.module b/uuid_features.module
+index ca6a94c..525e584 100644
+--- a/uuid_features.module
++++ b/uuid_features.module
+@@ -473,3 +473,60 @@ function _uuid_features_file_field_import_file(&$file) {
+ 
+   return TRUE;
+ }
++
 +/**
 + * Implements hook_entity_presave().
 + */
-+function uuid_panelizer_entity_presave($entity, $type) { 
++function uuid_features_entity_presave($entity, $type) { 
++  _uuid_panelizer_entity_presave($entity, $type);
++}
++
++/**
++ * Implements hook_entity_insert().
++ */
++function uuid_features_entity_insert($entity, $type) { 
++  _uuid_panelizer_entity_insert($entity, $type);
++}
++
++/**
++ * Implements hook_entity_presave().
++ */
++function _uuid_panelizer_entity_presave($entity, $type) { 
 +  if (isset($entity->panelizer)) {
 +    $fix_panel = FALSE;
 +    foreach ($entity->panelizer as $name => $panel) {
-+      if ($panel['entity_id'] != entity_id($type, $entity)) {
++      (object) $panel = $panel;
++      if ($panel->entity_id != entity_id($type, $entity)) {
 +        $fix_panel = TRUE;
 +        break;
 +      }
@@ -44,11 +45,12 @@ index 0000000..c43cbb1
 +/**
 + * Implements hook_entity_insert().
 + */
-+function uuid_panelizer_entity_insert($entity, $type) { 
++function _uuid_panelizer_entity_insert($entity, $type) { 
 +  $fixes = &drupal_static('uuid_panelizer_entity_presave', array());
 +  if (isset($fixes[$entity->uuid])) {
 +    list($id, $vid, $bundle) = entity_extract_ids($type, $entity);
 +    foreach ($fixes[$entity->uuid] as $name => $panel) {
++      // We need to rebuild the panelizer objects correctly
 +      $panel = (object) $panel;
 +      $panel->entity_id = $id;
 +      $panel->revision_id = $vid;
@@ -61,14 +63,3 @@ index 0000000..c43cbb1
 +    unset($fixes[$entity->uuid]);
 +  }
 +}
-\ No newline at end of file
-diff --git a/uuid_features.info b/uuid_features.info
-index 8220792..a72bc92 100644
---- a/uuid_features.info
-+++ b/uuid_features.info
-@@ -4,4 +4,5 @@ core = 7.x
- dependencies[] = features
- dependencies[] = uuid
- dependencies[] = entity
-+dependencies[] = uuid_panelizer
- package = Features
