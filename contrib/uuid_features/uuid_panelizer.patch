@@ -1,0 +1,74 @@
+diff --git a/modules/uuid_panelizer/uuid_panelizer.info b/modules/uuid_panelizer/uuid_panelizer.info
+new file mode 100644
+index 0000000..f1a73a3
+--- /dev/null
++++ b/modules/uuid_panelizer/uuid_panelizer.info
+@@ -0,0 +1,4 @@
++name = UUID Panelizer
++description = Helps panelized content save correctly
++core = 7.x
++package = Features
+\ No newline at end of file
+diff --git a/modules/uuid_panelizer/uuid_panelizer.module b/modules/uuid_panelizer/uuid_panelizer.module
+new file mode 100644
+index 0000000..c43cbb1
+--- /dev/null
++++ b/modules/uuid_panelizer/uuid_panelizer.module
+@@ -0,0 +1,46 @@
++<?php
++/**
++ * @file
++ * Module File
++ */
++ 
++/**
++ * Implements hook_entity_presave().
++ */
++function uuid_panelizer_entity_presave($entity, $type) { 
++  if (isset($entity->panelizer)) {
++    $fix_panel = FALSE;
++    foreach ($entity->panelizer as $name => $panel) {
++      if ($panel['entity_id'] != entity_id($type, $entity)) {
++        $fix_panel = TRUE;
++        break;
++      }
++    }
++    if ($fix_panel) {
++      $fixes = &drupal_static(__FUNCTION__, array());
++      $fixes[$entity->uuid] = $entity->panelizer;
++      unset($entity->panelizer);
++    }
++  }
++}
++
++/**
++ * Implements hook_entity_insert().
++ */
++function uuid_panelizer_entity_insert($entity, $type) { 
++  $fixes = &drupal_static('uuid_panelizer_entity_presave', array());
++  if (isset($fixes[$entity->uuid])) {
++    list($id, $vid, $bundle) = entity_extract_ids($type, $entity);
++    foreach ($fixes[$entity->uuid] as $name => $panel) {
++      $panel = (object) $panel;
++      $panel->entity_id = $id;
++      $panel->revision_id = $vid;
++      $panel->display = (object) $panel->display;
++      foreach($panel->display->content as &$pane) {
++        $pane = (object) $pane;
++      }
++      $entity->panelizer[$name] = $panel;
++    }
++    unset($fixes[$entity->uuid]);
++  }
++}
+\ No newline at end of file
+diff --git a/uuid_features.info b/uuid_features.info
+index 8220792..a72bc92 100644
+--- a/uuid_features.info
++++ b/uuid_features.info
+@@ -4,4 +4,5 @@ core = 7.x
+ dependencies[] = features
+ dependencies[] = uuid
+ dependencies[] = entity
++dependencies[] = uuid_panelizer
+ package = Features
